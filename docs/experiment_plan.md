@@ -159,8 +159,13 @@ df, summary = clean_data()   # 52,416 行 × 9 列，按 timestamp 升序
 
 ### 8.3 特征接口（B2 实现，C2 复用）
 
-- `src/features.py` 提供样本构造函数，通过 `include_weather`（布尔）开关天气特征组；
-- `src/splits.py`（如需要）固化第 4 节的切分边界，保证 B、C 使用完全一致的训练/验证/测试区间；
+- `src/splits.py`：`origin_bounds(n_rows)`、`split_ranges(n_rows)`、`split_origin_indices(n_rows)`、`verify_against_plan(df)`，固化第 4 节边界并做协议一致性校验；
+- `src/features.py`：
+  - `build_zone_samples(df, zone, *, include_weather=True, include_candidates=False) -> (X, y, meta)`，行索引为预测起点行号，`meta` 含 `origin_timestamp / target_timestamp / zone / split`；
+  - `build_all_zones(df, **kwargs)` 一次构造三个区域；
+  - `feature_groups(...)` 返回特征分组（`history` / `time` / `weather`）；
+- `include_weather=False` 即消融 A 组（历史 + 时间特征）；`include_candidates` 控制 3.2 中标记为候选的扩展特征（`load_lag_3`、`load_roll24_mean`、`load_season7_mean`，默认关闭）；
+- 索引对齐与切分一致性检查见 `tests/test_splits_features.py`（B2 验收）；
 - C2 的消融对照：A 组 = 历史 + 时间特征，B 组 = 历史 + 时间 + 天气特征，其余（样本、切分、模型、指标）不变；
 - C3 的误差分析直接读取 8.1 的预测文件，不重新构造样本。
 
