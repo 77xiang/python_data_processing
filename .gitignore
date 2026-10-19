@@ -219,6 +219,11 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Project data: keep directory placeholders, ignore raw/processed data files
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
 # WorkBuddy 本地工作区数据（不入库）
 .workbuddy/
 
