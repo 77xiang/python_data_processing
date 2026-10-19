@@ -157,6 +157,11 @@ df, summary = clean_data()   # 52,416 行 × 9 列，按 timestamp 升序
 | `mae` | 平均绝对误差 |
 | `rmse` | 均方根误差 |
 
+- 统一复现入口：`python src/compare.py` 从清洗数据完整重跑三个模型，并生成
+  `model_comparison.csv`、报告表 `report_table3.csv`（测试集，含三区合并口径）、
+  相对基线误差变化 `improvement_vs_naive.csv` 与图表（图 7、残差散点）；
+- C3 做误差分析时直接读取 8.1 的预测文件，指标可对照 `model_comparison.csv` 复算。
+
 ### 8.3 特征接口（B2 实现，C2 复用）
 
 - `src/splits.py`：`origin_bounds(n_rows)`、`split_ranges(n_rows)`、`split_origin_indices(n_rows)`、`verify_against_plan(df)`，固化第 4 节边界并做协议一致性校验；
