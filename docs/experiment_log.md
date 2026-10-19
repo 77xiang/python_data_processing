@@ -12,6 +12,7 @@
 | EXP-20261019-02 | 10-19 | 况子昱 | 制定预测实验协议（B1），不产实验结果 | 2017 全年；切分边界见 experiment_plan | — | — | — | — | docs/experiment_plan.md | 边界与索引对齐已程序化核对 |
 | EXP-20261019-03 | 10-19 | 况子昱 | 历史同期基线（B3，表 3 输入） | 协议边界：训练 01-08 00:00–09-14 20:40；验证–11-07 09:40；测试–12-30 22:50 | —（无特征） | ŷ(t+6)=y(t-1002)，无训练 | —（确定性） | 测试集 MAE/RMSE：Z1 831.04/1151.45；Z2 966.29/1366.37；Z3 1354.70/2216.34 | outputs/predictions/predictions_seasonal_naive.csv、outputs/metrics/baseline_metrics.csv | 索引对齐经 tests/test_models.py 检查 |
 | EXP-20261019-04 | 10-19 | 况子昱 | 线性回归基线（B3，表 3 输入） | 同 EXP-20261019-03 | StandardScaler 仅训练集拟合 | LinearRegression 默认参数；14 特征（4 滞后 + 5 时间 + 5 起点天气） | —（确定性） | 测试集 MAE/RMSE：Z1 2143.94/2513.42；Z2 1017.97/1551.77；Z3 1318.20/1663.91 | outputs/predictions/predictions_linear_regression.csv、outputs/metrics/baseline_metrics.csv | 测试集弱于同期基线：区域负荷水平漂移（Z1 均值 33,065→29,056，Z3 20,052→11,949），线性模型外推训练期水平产生系统偏差，如实记录 |
+| EXP-20261019-05 | 10-19 | 况子昱 | 梯度提升树（B4，表 3 输入） | 同 EXP-20261019-03 | —（树模型无需标准化） | HistGradientBoostingRegressor（early_stopping=False）；网格 max_iter{200,400}×lr{0.05,0.1}×max_depth{None,5} 共 8 组，按验证集 RMSE 选优；选定 Z1(200,0.05,5)、Z2(200,0.05,None)、Z3(400,0.1,5) | 42 | 测试集 MAE/RMSE：Z1 1629.97/2244.42；Z2 1037.39/1681.75；Z3 1997.36/2386.99 | outputs/predictions/predictions_gradient_boosting.csv、outputs/metrics/gbt_metrics.csv、gbt_tuning.csv、gbt_config.csv | 经典 GBT 单次训练 40–108s，Hist 版 0.5–2.7s，按协议备选条款采用 Hist 版；测试集弱于同期基线（偏差 +1020/-532/+1670），如实记录 |
 
 ## 参考格式（正式记录时照着写，写完删掉这行）
 
