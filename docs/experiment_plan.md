@@ -116,7 +116,7 @@ df, summary = clean_data()   # 52,416 行 × 9 列，按 timestamp 升序
 |---|---|---|
 | 历史同期基线 `seasonal_naive` | `ŷ(t+6) = y(t-1002)` | 无训练、无超参 |
 | 线性回归 `linear_regression` | sklearn `LinearRegression`，特征见 3.2 默认主特征集 | 特征标准化（`StandardScaler` 只在训练集拟合）；无超参 |
-| 梯度提升树 `gradient_boosting` | sklearn `GradientBoostingRegressor`，特征同上 | 随机种子 42；B4 在验证集上做小范围参数比较（`n_estimators`、`learning_rate`、`max_depth` 的少量候选），选定后在测试集只评一次；若训练耗时过长可改用 `HistGradientBoostingRegressor`，须在实验日志记录 |
+| 梯度提升树 `gradient_boosting` | sklearn `HistGradientBoostingRegressor`（B4 实测经典 `GradientBoostingRegressor` 单次训练 40–108 秒、Hist 版约 0.5–3.5 秒，按本协议备选条款改用以保证 B6 可复现，理由见实验日志），特征同上 | 随机种子 42；B4 在验证集上比较小范围候选（`max_iter`∈{200,400}、`learning_rate`∈{0.05,0.1}、`max_depth`∈{None,5}，共 8 组），按验证集 RMSE 逐区域选定，测试集只评一次 |
 
 - 每个模型对三个区域分别训练/评估，共 9 个（模型 × 区域）组合。
 - 参数选择过程与最终配置写入 [experiment_log.md](./experiment_log.md)。
@@ -190,7 +190,7 @@ df, summary = clean_data()   # 52,416 行 × 9 列，按 timestamp 升序
 
 1. 天气特征的"同步观测可得"假设需要全组认可（A 接口文档已提示，此处作为正式协议固化）。
 2. 3.2 中标记为"候选"的历史特征默认不进主特征集；B2 若用验证集验证后决定加入，需更新本文档并在日志中记录。
-3. GBT 最终超参数待 B4 确定；主实验默认使用 `GradientBoostingRegressor`。
+3. GBT 超参数已由 B4 在验证集上逐区域选定（见 `outputs/metrics/gbt_config.csv`）；实现采用 `HistGradientBoostingRegressor`（理由见 §6 与实验日志 EXP-20261019-05）。
 4. 数据缺少 2017-12-31 全天（364 天），测试期止于 12-30 23:50，报告中应如实说明。
 5. 原始数据文件不入 Git（`data/raw/` 已在 .gitignore 中），复现需本地放置 `data/raw/题4_城市电力负荷.csv` 后运行 `src/data_cleaning.py`。
 
