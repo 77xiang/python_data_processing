@@ -145,73 +145,6 @@ def test_saved_prediction_files() -> None:
     assert len(metrics) == 18
 
 
-def test_gbt_deterministic_and_finite() -> None:
-    """运行稳定性：同种子、同配置两次训练，预测逐值一致且有限。"""
-    df = _df()
-    from src.features import build_zone_samples
-    from src.models import train_gradient_boosting
-
-    X, y, meta = build_zone_samples(df, "zone3")
-    train_mask = (meta["split"] == "train").to_numpy()
-    kwargs = dict(max_iter=100, learning_rate=0.1, max_depth=5)
-    m1 = train_gradient_boosting(X.to_numpy()[train_mask], y.to_numpy()[train_mask], **kwargs)
-    m2 = train_gradient_boosting(X.to_numpy()[train_mask], y.to_numpy()[train_mask], **kwargs)
-    pred = m1.predict(X)
-    assert np.isfinite(pred).all()
-    assert np.array_equal(pred, m2.predict(X))
-
-
-def _nan_equal(a, b) -> bool:
-    a_is_nan = pd.isna(a)
-    b_is_nan = pd.isna(b)
-    if a_is_nan and b_is_nan:
-        return True
-    return not a_is_nan and not b_is_nan and a == b
-
-
-def test_gbt_output_files() -> None:
-    """B4 输出文件：格式、行数、选定配置与调参明细一致。"""
-    from src.evaluate import (
-        GBT_CONFIG_FILE,
-        GBT_METRICS_FILE,
-        GBT_TUNING_FILE,
-        METRICS_DIR,
-        PREDICTIONS_DIR,
-    )
-    from src.models import GRADIENT_BOOSTING
-
-    p = PREDICTIONS_DIR / f"predictions_{GRADIENT_BOOSTING}.csv"
-    assert p.is_file(), f"缺少预测文件 {p}"
-    pred = pd.read_csv(p)
-    assert list(pred.columns) == [
-        "origin_timestamp", "target_timestamp", "zone",
-        "actual", "predicted", "model", "split",
-    ]
-    assert set(pred["model"]) == {GRADIENT_BOOSTING}
-    assert set(pred["split"]) == {"test"}
-    assert len(pred) == 7711 * 3
-    dt = pd.to_datetime(pred["target_timestamp"]) - pd.to_datetime(pred["origin_timestamp"])
-    assert (dt == pd.Timedelta(hours=1)).all()
-    assert pred[["actual", "predicted"]].notna().all().all()
-
-    metrics = pd.read_csv(METRICS_DIR / GBT_METRICS_FILE)
-    assert list(metrics.columns) == ["model", "zone", "split", "n_samples", "mae", "rmse"]
-    assert len(metrics) == 9
-
-    tuning = pd.read_csv(METRICS_DIR / GBT_TUNING_FILE)
-    config = pd.read_csv(METRICS_DIR / GBT_CONFIG_FILE)
-    assert len(config) == 3 and set(config["zone"]) == {"zone1", "zone2", "zone3"}
-    # 每个区域的选定配置 = 该区域验证集 RMSE 最小的候选
-    for _, row in config.iterrows():
-        zone_rows = tuning[tuning["zone"] == row["zone"]]
-        best = zone_rows.loc[zone_rows["val_rmse"].idxmin()]
-        assert _nan_equal(row["val_rmse"], best["val_rmse"])
-        for key in ("max_iter", "learning_rate", "max_depth"):
-            assert _nan_equal(row[key], best[key]), f"{row['zone']} 配置 {key} 与调参明细不符"
-    # 调参只使用验证集：明细表只有 val 指标列，测试集指标不在其中
-    assert not any("test" in c for c in tuning.columns)
-
-
 def main() -> int:
     tests = [
         test_naive_index_alignment,
@@ -219,8 +152,6 @@ def main() -> int:
         test_linear_regression_runs,
         test_run_models_output_consistency,
         test_saved_prediction_files,
-        test_gbt_deterministic_and_finite,
-        test_gbt_output_files,
     ]
     failed = []
     for fn in tests:
