@@ -17,7 +17,7 @@
 
 | EXP-20261020-01 | 10-20 | 徐启翔 | 天气特征消融（C2，表 4/图 9）：LR 与 GBT 在「历史+时间」vs「历史+时间+天气」下对照 | 同 EXP-20261019-03 | 同主实验，仅 include_weather 开关不同 | LR 默认参数；GBT 用 gbt_config.csv 逐区域选定配置；种子 42 | 42 | 测试集 RMSE 变化（B 组 vs A 组）：LR −23.28%/−4.12%/−34.61%（Z1/Z2/Z3）；GBT −22.01%/−7.83%/**+3.24%** | outputs/metrics/ablation_results.csv、ablation_summary.csv、outputs/figures/fig9_ablation.png | 天气仅用起点 t 时刻同步观测；5/6 组合加天气后误差下降，但 GBT 在 Z3 变差（+3.24%），如实报告；LR 结果与主实验 EXP-20261019-04 完全一致（确定性复现），GBT 略有数值漂移（Z1 RMSE 2244.42→2238.00），系本次环境 sklearn 版本与 B 机不同所致 |
 
-| EXP-20261020-02 | 10-20 | 徐启翔 | 分区域与高负荷时段误差分析（C3，图 8 及报告结果段落输入） | 测试集：2017-11-07 09:50–12-30 22:50（起点），三区域 | 直接读 B5 预测文件，不重构造样本；高负荷阈值用训练集负荷分布 Q90 | 对 seasonal_naive/LR/GBT 三模型测试集预测做分组误差分析 | —（确定性统计） | 待运行后填入 | outputs/metrics/error_by_*.csv、outputs/figures/fig8_error_*.png | 阈值只用训练集分布，不用测试集挑选；同时报绝对与相对指标避免量级误导 |
+| EXP-20261020-02 | 10-20 | 徐启翔 | 分区域与高负荷时段误差分析（C3，图 8 及报告结果段落输入） | 测试集：2017-11-07 09:50–12-30 22:50（起点），三区域 | 直接读 B5 预测文件，不重构造样本；高负荷阈值用训练集负荷分布 Q90 | 对 seasonal_naive/LR/GBT 三模型测试集预测做分组误差分析 | —（确定性统计） | 高负荷阈值（训练集 Q90）：Z1 43053 / Z2 27221 / Z3 28239；GBT bias：Z1 +1020、Z2 −532、Z3 +1670；高峰 vs 普通（GBT/Z2）：RMSE 2761 vs 1125；nRMSE 三区 GBT 7.72%/7.15%/19.98% | outputs/metrics/error_overall.csv、error_by_hour.csv、error_by_dayofweek.csv、error_by_month.csv、error_peak_vs_normal.csv；outputs/figures/fig8_error_by_hour.png、fig8_residual_dist.png、fig8_residual_time.png；docs/error_analysis_findings.md | 阈值只用训练集分布；Z1 测试期高峰样本仅 9 条、Z3 为 0 条（负荷下移所致），高峰结论对这两区仅供参考；指标复算与 B5 记录一致 ✓；文字草稿待 C4 润色 |
 
 ## 参考格式（正式记录时照着写，写完删掉这行）
 
@@ -29,5 +29,5 @@
 - [ ] 时序与天气分析图表有记录（郑宜桥，A3/A4）
 - [ ] 三个模型同一测试集评估（况子昱，B3–B5）
 - [x] 消融实验完成，结果存 outputs/metrics/ablation_results.csv（徐启翔，C2）
-- [ ] 误差分析完成（徐启翔，C3）
+- [x] 误差分析完成（徐启翔，C3）
 - [ ] 报告里所有数字都能对上日志
