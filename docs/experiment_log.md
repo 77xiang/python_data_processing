@@ -19,6 +19,8 @@
 
 | EXP-20261020-02 | 10-20 | 徐启翔 | 分区域与高负荷时段误差分析（C3，图 8 及报告结果段落输入） | 测试集：2017-11-07 09:50–12-30 22:50（起点），三区域 | 直接读 B5 预测文件，不重构造样本；高负荷阈值用训练集负荷分布 Q90 | 对 seasonal_naive/LR/GBT 三模型测试集预测做分组误差分析 | —（确定性统计） | 高负荷阈值（训练集 Q90）：Z1 43053 / Z2 27221 / Z3 28239；GBT bias：Z1 +1020、Z2 −532、Z3 +1670；高峰 vs 普通（GBT/Z2）：RMSE 2761 vs 1125；nRMSE 三区 GBT 7.72%/7.15%/19.98% | outputs/metrics/error_overall.csv、error_by_hour.csv、error_by_dayofweek.csv、error_by_month.csv、error_peak_vs_normal.csv；outputs/figures/fig8_error_by_hour.png、fig8_residual_dist.png、fig8_residual_time.png；docs/error_analysis_findings.md | 阈值只用训练集分布；Z1 测试期高峰样本仅 9 条、Z3 为 0 条（负荷下移所致），高峰结论对这两区仅供参考；指标复算与 B5 记录一致 ✓；文字草稿待 C4 润色 |
 
+| EXP-20261020-03 | 10-20 | 况子昱 | 模型交付与复现检查（B6 重做，覆盖 C2/C3 合并后状态），不产新指标 | 同 EXP-20261019-03 | 从原始数据重新清洗后完整重跑两次 | src/compare.py 统一入口；哈希对比验证可复现 | 42（GBT） | 两次重跑输出哈希一致；19 项自动化检查全过（交付 6 项 + 模型 7 项 + 切分 6 项） | docs/model_delivery_report.md、tests/test_delivery_check.py、README.md | 与 C 交叉核对：C3 指标与主实验逐值一致 ✓；C2 的 LR 与主实验逐值一致 ✓；GBT 消融漂移 0.3%–3.1%（C 机 sklearn 版本差异，EXP-20261020-01 已注明），建议全组锁定 sklearn==1.6.1 |
+
 ## 参考格式（正式记录时照着写，写完删掉这行）
 
 | EXP-20261022-01 | 10-22 | 况子昱 | 线性回归基线，Zone 1（表 3） | 训练 1–10 月 / 测试 11–12 月（以 experiment_plan 边界为准） | A2 清洗输出 + 滞后/时间特征 | LinearRegression 默认参数 | 42 | 测试集 MAE=… RMSE=… | outputs/metrics/… | 索引对齐已人工抽查 |
@@ -27,7 +29,8 @@
 
 - [ ] 数据审计和清洗有记录（郑宜桥，A1/A2）
 - [ ] 时序与天气分析图表有记录（郑宜桥，A3/A4）
-- [ ] 三个模型同一测试集评估（况子昱，B3–B5）
+- [x] 三个模型同一测试集评估（况子昱，B3–B5）
 - [x] 消融实验完成，结果存 outputs/metrics/ablation_results.csv（徐启翔，C2）
 - [x] 误差分析完成（徐启翔，C3）
+- [x] 模型交付与复现检查完成（况子昱，B6，见 docs/model_delivery_report.md）
 - [ ] 报告里所有数字都能对上日志
