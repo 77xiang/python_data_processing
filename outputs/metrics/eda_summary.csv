@@ -1,0 +1,4 @@
+﻿zone,annual_mean,peak_hour,trough_hour,daily_peak_mean,daily_trough_mean,peak_trough_ratio,workday_mean,weekend_mean,weekend_effect_pct,workday_evening_mean,weekend_evening_mean,evening_weekend_gap_pct,max_month,max_month_mean,min_month,min_month_mean,summer_mean,winter_mean,summer_winter_ratio,max_weekday,min_weekday,max_weekday_mean,min_weekday_mean,weekday_weekend_ratio
+zone1_power,32344.97,20,6,43822.59,23203.6,1.889,32676.34,31516.56,-3.55,42262.8,41063.98,-2.84,8,36435.19,11,29002.11,35635.17,30340.83,1.174,周三,周日,32871.76,30780.08,1.037
+zone2_power,21042.51,20,6,28186.91,14934.7,1.887,21546.45,19782.67,-8.19,27637.17,25917.43,-6.22,8,24656.22,4,17633.97,23185.38,20648.78,1.123,周四,周日,21845.16,18979.38,1.089
+zone3_power,17835.41,20,7,26027.61,11667.86,2.231,17776.37,17983.01,1.16,24488.72,24694.93,0.84,7,28194.11,12,11044.81,24468.06,15357.9,1.593,周六,周五,18011.19,17545.97,0.989
