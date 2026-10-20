@@ -15,6 +15,10 @@
 | EXP-20261019-05 | 10-19 | 况子昱 | 梯度提升树（B4，表 3 输入） | 同 EXP-20261019-03 | —（树模型无需标准化） | HistGradientBoostingRegressor（early_stopping=False）；网格 max_iter{200,400}×lr{0.05,0.1}×max_depth{None,5} 共 8 组，按验证集 RMSE 选优；选定 Z1(200,0.05,5)、Z2(200,0.05,None)、Z3(400,0.1,5) | 42 | 测试集 MAE/RMSE：Z1 1629.97/2244.42；Z2 1037.39/1681.75；Z3 1997.36/2386.99 | outputs/predictions/predictions_gradient_boosting.csv、outputs/metrics/gbt_metrics.csv、gbt_tuning.csv、gbt_config.csv | 经典 GBT 单次训练 40–108s，Hist 版 0.5–2.7s，按协议备选条款采用 Hist 版；测试集弱于同期基线（偏差 +1020/-532/+1670），如实记录 |
 | EXP-20261019-06 | 10-19 | 况子昱 | 统一模型比较与主实验（B5，表 3/图 7） | 同 EXP-20261019-03 | 复用 EXP-03/04/05 配置 | src/compare.py 从清洗数据完整重跑三模型，同测试区间同目标 | 42（GBT） | 测试集合并口径 MAE/RMSE：基线 1050.68/1643.67；LR 1493.37/1957.37；GBT 1554.91/2126.30 | outputs/metrics/model_comparison.csv、report_table3.csv、improvement_vs_naive.csv；outputs/figures/fig7_pred_vs_actual.png、fig_residual_scatter.png | 相对基线误差变化已计算：仅 Z3 上 LR 的 RMSE 优于基线（-24.93%），其余组合基线占优，未挑选有利区域/时段报告 |
 
+| EXP-20261020-01 | 10-20 | 徐启翔 | 天气特征消融（C2，表 4/图 9）：LR 与 GBT 在「历史+时间」vs「历史+时间+天气」下对照 | 同 EXP-20261019-03 | 同主实验，仅 include_weather 开关不同 | LR 默认参数；GBT 用 gbt_config.csv 逐区域选定配置；种子 42 | 42 | 测试集 RMSE 变化（B 组 vs A 组）：LR −23.28%/−4.12%/−34.61%（Z1/Z2/Z3）；GBT −22.01%/−7.83%/**+3.24%** | outputs/metrics/ablation_results.csv、ablation_summary.csv、outputs/figures/fig9_ablation.png | 天气仅用起点 t 时刻同步观测；5/6 组合加天气后误差下降，但 GBT 在 Z3 变差（+3.24%），如实报告；LR 结果与主实验 EXP-20261019-04 完全一致（确定性复现），GBT 略有数值漂移（Z1 RMSE 2244.42→2238.00），系本次环境 sklearn 版本与 B 机不同所致 |
+
+| EXP-20261020-02 | 10-20 | 徐启翔 | 分区域与高负荷时段误差分析（C3，图 8 及报告结果段落输入） | 测试集：2017-11-07 09:50–12-30 22:50（起点），三区域 | 直接读 B5 预测文件，不重构造样本；高负荷阈值用训练集负荷分布 Q90 | 对 seasonal_naive/LR/GBT 三模型测试集预测做分组误差分析 | —（确定性统计） | 待运行后填入 | outputs/metrics/error_by_*.csv、outputs/figures/fig8_error_*.png | 阈值只用训练集分布，不用测试集挑选；同时报绝对与相对指标避免量级误导 |
+
 ## 参考格式（正式记录时照着写，写完删掉这行）
 
 | EXP-20261022-01 | 10-22 | 况子昱 | 线性回归基线，Zone 1（表 3） | 训练 1–10 月 / 测试 11–12 月（以 experiment_plan 边界为准） | A2 清洗输出 + 滞后/时间特征 | LinearRegression 默认参数 | 42 | 测试集 MAE=… RMSE=… | outputs/metrics/… | 索引对齐已人工抽查 |
@@ -24,6 +28,6 @@
 - [ ] 数据审计和清洗有记录（郑宜桥，A1/A2）
 - [ ] 时序与天气分析图表有记录（郑宜桥，A3/A4）
 - [ ] 三个模型同一测试集评估（况子昱，B3–B5）
-- [ ] 消融实验完成，结果存 outputs/metrics/ablation_results.csv（徐启翔，C2）
+- [x] 消融实验完成，结果存 outputs/metrics/ablation_results.csv（徐启翔，C2）
 - [ ] 误差分析完成（徐启翔，C3）
 - [ ] 报告里所有数字都能对上日志
