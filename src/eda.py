@@ -283,6 +283,34 @@ def build_summary(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def build_daily_extremes(df: pd.DataFrame) -> pd.DataFrame:
+    """每日峰谷时刻的稳定性。
+
+    用来判断日周期是否稳定到可以作为滞后特征的依据：若大部分日子的峰值都落在
+    同一时段，说明 24 小时前的同期观测对预测目标有稳定参考价值。
+    """
+    work = df[["timestamp", "hour"] + list(ZONES)].copy()
+    work["date"] = work["timestamp"].dt.date
+
+    rows = []
+    for z in ZONES:
+        hourly = work.groupby(["date", "hour"])[z].mean().unstack()
+        peak = hourly.idxmax(axis=1)
+        trough = hourly.idxmin(axis=1)
+        daily_peak = hourly.max(axis=1)
+        rows.append({
+            "zone": z,
+            "n_days": int(len(hourly)),
+            "peak_hour_mode": int(peak.mode().iloc[0]),
+            "peak_share_18_21_pct": round(float(peak.isin([18, 19, 20, 21]).mean() * 100), 1),
+            "peak_share_20_pct": round(float((peak == 20).mean() * 100), 1),
+            "trough_share_4_7_pct": round(float(trough.isin([4, 5, 6, 7]).mean() * 100), 1),
+            "daily_peak_mean": round(float(daily_peak.mean()), 2),
+            "daily_peak_cv_pct": round(float(daily_peak.std() / daily_peak.mean() * 100), 1),
+        })
+    return pd.DataFrame(rows)
+
+
 # ---------------------------------------------------------------------------
 # 入口
 # ---------------------------------------------------------------------------
@@ -304,8 +332,13 @@ def main() -> int:
     summary = build_summary(df)
     summary.to_csv(METRICS_DIR / "eda_summary.csv", index=False, encoding="utf-8-sig")
 
+    extremes = build_daily_extremes(df)
+    extremes.to_csv(METRICS_DIR / "eda_daily_extremes.csv", index=False, encoding="utf-8-sig")
+
     print("\n分区汇总：")
     print(summary.to_string(index=False))
+    print("\n每日峰谷稳定性：")
+    print(extremes.to_string(index=False))
     print(f"\n图已保存到 {FIGURES_DIR}")
     print(f"数字已保存到 {METRICS_DIR}")
     return 0
