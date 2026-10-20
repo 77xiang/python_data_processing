@@ -1,0 +1,16 @@
+﻿zone,weather_factor,pearson,spearman
+zone1_power,temperature,0.4402,0.4326
+zone1_power,humidity,-0.2874,-0.2997
+zone1_power,wind_speed,0.1674,0.1067
+zone1_power,general_diffuse_flows,0.188,0.2613
+zone1_power,diffuse_flows,0.0803,0.1248
+zone2_power,temperature,0.3824,0.3788
+zone2_power,humidity,-0.295,-0.309
+zone2_power,wind_speed,0.1464,0.0874
+zone2_power,general_diffuse_flows,0.1572,0.2416
+zone2_power,diffuse_flows,0.0447,0.0971
+zone3_power,temperature,0.4895,0.4363
+zone3_power,humidity,-0.233,-0.2118
+zone3_power,wind_speed,0.2786,0.079
+zone3_power,general_diffuse_flows,0.0634,0.0849
+zone3_power,diffuse_flows,-0.0385,-0.0214
