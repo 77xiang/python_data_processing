@@ -229,3 +229,6 @@ data/processed/*
 
 # 清洗后的中间数据（原始数据只读，不入库）
 data/processed/
+
+# Word 转换管线产物（本地生成，不入库）
+output/
