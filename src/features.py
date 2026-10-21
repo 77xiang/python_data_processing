@@ -155,7 +155,7 @@ def build_zone_samples(
 
     X = pd.DataFrame(index=origins)
 
-    # 历史负荷滞后特征（相对起点 t 回溯，全部 ≤ t）
+    # 历史负荷滞后特征（相对起点t回溯，全部 ≤ t）
     for name, k in HISTORY_LAGS.items():
         X[name] = load[origins - k]
 
@@ -189,7 +189,7 @@ def build_zone_samples(
     X["hour_sin"] = np.sin(2 * np.pi * hour / 24)
     X["hour_cos"] = np.cos(2 * np.pi * hour / 24)
 
-    # 天气特征：t 时刻同步观测（可用性假设见协议 3.3）
+    # 天气特征：t时刻同步观测（可用性假设见协议3.3）
     if include_weather:
         for col in WEATHER_COLUMNS:
             X[col] = df[col].to_numpy(dtype=float)[origins]

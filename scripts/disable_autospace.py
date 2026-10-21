@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
-"""关闭 Word 的“中英文/中文与数字之间自动加空格”渲染行为。
+"""关闭 Word 的“中英文/中文与数字之间自动加空格”渲染行为，
+并清理页脚“第 N 页”里中西文之间的真实空格 run。
 
-正文里的间距并非真实空格字符，而是 Word 与腾讯文档预览默认开启的
-w:autoSpaceDE / w:autoSpaceDN（中西文、中文与数字自动间距）渲染出来的。
+正文里的间距一部分并非真实空格字符，而是 Word 默认开启的
+w:autoSpaceDE / w:autoSpaceDN（中西文、中文与数字自动间距）渲染出来的；
 把两者在 docDefaults 的 rPrDefault 上显式置为 false，即可让中英文直接相邻。
+页脚的“第 _ N _ 页”则由 CSS content 字符串转换而来，空格是真实字符，
+需要把仅含空格的 w:r 删掉。
 
 用法：python scripts/disable_autospace.py <docx 路径>
 """
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -18,6 +22,25 @@ from docx.oxml.ns import qn
 from lxml import etree
 
 W_NS = qn("w:docDefaults").split("}")[0].split("{")[1] + "}"
+FOOTER_RE = re.compile(r"/word/footer\d+\.xml$")
+
+
+def clean_footer_space_runs(doc: docx.Document) -> int:
+    """删除各页脚中仅含 ASCII 空格的 w:r（如“第”与 PAGE 域之间的空格）。"""
+    removed = 0
+    for part in doc.part.package.iter_parts():
+        if not FOOTER_RE.search(str(part.partname)):
+            continue
+        root = part.element
+        for r in list(root.iter(qn("w:r"))):
+            kids = [k for k in r if k.tag != qn("w:rPr")]
+            if len(kids) != 1 or kids[0].tag != qn("w:t"):
+                continue
+            text = kids[0].text or ""
+            if text != "" and text.strip() == "":
+                r.getparent().remove(r)
+                removed += 1
+    return removed
 
 
 def patch(path: Path) -> int:
@@ -49,8 +72,11 @@ def patch(path: Path) -> int:
                 node.set(qn("w:val"), "false")
                 added += 1
 
+    removed = clean_footer_space_runs(doc)
+
     doc.save(str(path))
-    print(f"{path.name}: 写入/更新 autoSpaceDE/autoSpaceDN = false（{added} 处）")
+    print(f"{path.name}: 写入/更新 autoSpaceDE/autoSpaceDN = false（{added} 处），"
+          f"清理页脚空格 run {removed} 个")
     return added
 
 

@@ -7,7 +7,11 @@
 """
 import base64
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build_report_html import strip_cjk_spaces, strip_md  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 FIG = ROOT / "outputs" / "figures"
@@ -23,20 +27,20 @@ def b64(name: str) -> str:
 def img(name: str, alt: str) -> str:
     return (
         f'<div class="fig-img"><img src="data:image/png;base64,{b64(name)}" '
-        f'alt="{alt}" /></div>'
+        f'alt="{strip_cjk_spaces(alt)}" /></div>'
     )
 
 
 def cap(text: str) -> str:
-    return f'<p class="fig-cap">{text}</p>'
+    return f'<p class="fig-cap">{strip_cjk_spaces(text)}</p>'
 
 
 def note(text: str) -> str:
-    return f'<p class="fig-note">{text}</p>'
+    return f'<p class="fig-note">{strip_cjk_spaces(text)}</p>'
 
 
 def tab_cap(text: str) -> str:
-    return f'<p class="tab-cap">{text}</p>'
+    return f'<p class="tab-cap">{strip_cjk_spaces(text)}</p>'
 
 
 TABLE1 = """<table>
@@ -70,6 +74,10 @@ TABLE2 = """<table>
 <tr><td class="l">　其中 diffuse_flows</td><td>1,690 条</td><td class="l">极端点集中在固定时段，按真实波动保留</td></tr>
 <tr><td class="l">　其中 zone3_power</td><td>18 条</td><td class="l">极端点集中在固定时段，按真实波动保留</td></tr>
 </table>"""
+
+# 表内文字同样删除中西文/数字间空格（HTML 标签与属性均为 ASCII，不受影响）
+TABLE1 = strip_cjk_spaces(TABLE1)
+TABLE2 = strip_cjk_spaces(TABLE2)
 
 REPLACEMENTS = {
     "表 1": tab_cap("表 1　数据字段说明") + TABLE1
@@ -133,7 +141,7 @@ TABLE_CAPTIONS = {
     + note("注：测试集为 2017-11-07 09:50 至 2017-12-30 22:50，每区域 7,711 个样本；"
            "加粗为同区域最优；MSE 按逐点预测误差平方的均值计算，RMSE 为其平方根，"
            "各指标均由未舍入结果计算后再显示舍入。"),
-    "<tr><th>模型</th><th>区域</th><th>测试集 RMSE 变化</th>": tab_cap(
+    "<tr><th>模型</th><th>区域</th>": tab_cap(
         "表 5　天气特征消融结果（含周同期特征的新特征集）"
     )
     + note("注：数值为含天气特征组（B 组）相对不含天气特征组（A 组）的测试集 RMSE 变化，"
@@ -142,17 +150,18 @@ TABLE_CAPTIONS = {
 
 
 def md_to_html(text: str) -> str:
-    """把一个成员的 markdown 说明转成 HTML 段落。"""
+    """把一个成员的 markdown 说明转成 HTML 段落（同样删除中英文间空格）。"""
     out = []
     for block in re.split(r"\n\s*\n", text.strip()):
         block = block.strip()
         if not block or block.startswith("#"):
             continue
+        block = strip_md(block)  # 先删空格再转 <b>，理由同 build_report_html.inline
         block = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", block)
         if block.startswith("**") or block.startswith("<b>") and block.endswith("</b>") and "\n" not in block:
-            out.append(f'<p class="member-name">{block}</p>')
+            out.append(f'<p class="member-name">{strip_cjk_spaces(block)}</p>')
         else:
-            out.append(f'<p class="body-text">{block}</p>')
+            out.append(f'<p class="body-text">{strip_cjk_spaces(block)}</p>')
     return "\n".join(out)
 
 
@@ -160,16 +169,20 @@ def load_member_sections() -> str:
     a_text = (ROOT / "docs" / "report_chapter8_A.md").read_text(encoding="utf-8")
     a_body = a_text.split("### 郑宜桥（成员 A）", 1)[1]
     a_body = re.sub(r"^#+ .*$", "", a_body, flags=re.M).strip()
-    a_html = '<p class="member-name">郑宜桥（成员 A）</p>\n' + md_to_html(a_body)
+    a_html = '<p class="member-name">' + strip_cjk_spaces('郑宜桥（成员 A）') + '</p>\n' + md_to_html(a_body)
 
     d_text = (ROOT / "docs" / "report_draft.md").read_text(encoding="utf-8")
     bc_body = d_text.split("**况子昱（成员 B）**", 1)[1].split("## 9 附录", 1)[0]
     bc_body = bc_body.replace("（此段由徐启翔依据 `docs/model_delivery_report.md` 起草，待本人确认后定稿）", "")
     bc_html = md_to_html(bc_body)
     bc_html = bc_html.replace(
-        '<p class="body-text">', '<p class="member-name">况子昱（成员 B）</p>\n<p class="body-text">', 1
+        '<p class="body-text">',
+        '<p class="member-name">' + strip_cjk_spaces('况子昱（成员 B）') + '</p>\n<p class="body-text">', 1
     )
-    bc_html = bc_html.replace("**徐启翔（成员 C）**", '<p class="member-name">徐启翔（成员 C）</p>', 1)
+    bc_html = bc_html.replace(
+        "**徐启翔（成员 C）**",
+        '<p class="member-name">' + strip_cjk_spaces('徐启翔（成员 C）') + '</p>', 1
+    )
     bc_html = re.sub(r"</?p class=\"body-text\">\s*<p class=\"member-name\">",
                      '<p class="member-name">', bc_html)
     return a_html + "\n" + bc_html
@@ -200,11 +213,12 @@ def main() -> None:
     for anchor, caption_html in TABLE_CAPTIONS.items():
         html = html.replace(anchor, caption_html + anchor, 1)
 
-    # 3) 占位段替换
+    # 3) 占位段替换（键与占位文本都去掉空格后比较，容忍"表 3"变"表3"）
     def repl(m: re.Match) -> str:
         inner = m.group(1)
+        inner_norm = re.sub(r"\s+", "", inner)
         for key, value in REPLACEMENTS.items():
-            if key in inner:
+            if re.sub(r"\s+", "", key) == inner_norm:
                 print(f"  替换占位：{inner}")
                 return value
         print(f"  !! 未识别的占位：{inner}")

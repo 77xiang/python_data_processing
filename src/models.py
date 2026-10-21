@@ -59,7 +59,7 @@ def seasonal_naive_predict(load: np.ndarray, origins: np.ndarray) -> np.ndarray:
     origins = np.asarray(origins, dtype=int)
     if (origins - NAIVE_LAG).min() < 0:
         raise ValueError(
-            "存在起点不足 7 天历史的样本，无法取上一周同期值；"
+            "存在起点不足7天历史的样本，无法取上一周同期值；"
             "协议规定可用起点必须 ≥ 1008，请检查切分逻辑"
         )
     return load[origins - NAIVE_LAG]
