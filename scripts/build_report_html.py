@@ -74,7 +74,8 @@ def parse(md_text: str) -> tuple[list[dict], list[str]]:
         target = cur["sections"][-1]["blocks"] if cur["sections"] else cur["blocks"]
         if text.startswith("**关键词：**") or text.startswith("关键词："):
             rest = text.split("：", 1)[1] if "：" in text else ""
-            target.append(f'<p><span class="kw">关键词：</span>{inline(rest.strip())}</p>')
+            rest = rest.strip().lstrip("*").strip()  # 去掉 markdown 加粗的残留星号
+            target.append(f'<p><span class="kw">关键词：</span>{inline(rest)}</p>')
         else:
             target.append(f'<p class="body-text">{inline(text)}</p>')
 
@@ -100,6 +101,17 @@ def parse(md_text: str) -> tuple[list[dict], list[str]]:
         if cur is None:
             continue  # 文档标题与前言块引用，正文从这里之前一律跳过
         stripped = line.strip()
+        if stripped.startswith("```"):
+            flush_para()
+            code = []
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code.append(lines[i])
+                i += 1
+            i += 1  # 跳过收尾的 ```
+            esc = "\n".join(code).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            target = cur["sections"][-1]["blocks"] if cur["sections"] else cur["blocks"]
+            target.append(f'<pre class="code">{esc}</pre>')
+            continue
         if not stripped:
             flush_para()
             continue

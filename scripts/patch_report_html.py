@@ -131,7 +131,8 @@ REPLACEMENTS = {
 TABLE_CAPTIONS = {
     "<tr><th>模型</th><th>Z1 MAE/RMSE</th>": tab_cap("表 3　三个模型在测试集上的对比（原特征集）")
     + note("注：测试集为 2017-11-07 09:50 至 2017-12-30 22:50，每区域 7,711 个样本；"
-           "加粗为同区域最优；MSE 由 RMSE 平方得到，与逐点计算等价。"),
+           "加粗为同区域最优；MSE 按逐点预测误差平方的均值计算，RMSE 为其平方根，"
+           "各指标均由未舍入结果计算后再显示舍入。"),
     "<tr><th>模型</th><th>区域</th><th>测试集 RMSE 变化</th>": tab_cap(
         "表 5　天气特征消融结果（含周同期特征的新特征集）"
     )
@@ -189,6 +190,9 @@ def main() -> None:
         '  .fig-img img { max-width: 100%; }\n'
         '  .member-name { font-family: "SimHei", "SimSun", serif; font-size: 12pt; '
         'font-weight: bold; margin: 14pt 0 4pt; }\n'
+        '  pre.code { font-family: "Consolas", "Courier New", monospace; font-size: 9pt; '
+        'line-height: 1.4; background: #f5f7fa; border: 1px solid #e2e6ec; '
+        'padding: 6pt 8pt; white-space: pre-wrap; margin: 6pt 0; text-indent: 0; }\n'
     )
     html = html.replace("</style>", extra_css + "</style>")
 
