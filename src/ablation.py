@@ -11,10 +11,19 @@
 见 outputs/metrics/gbt_config.csv）。天气特征只取预测起点 t 的同步观测，
 不含目标时刻的任何未来信息；不预设天气特征有效，如实报告结果。
 
+带 --target-week 时，两组都额外包含目标时刻对齐的上周同期特征
+`load_lag_target_week = y(t-1002)`（主实验证实该特征能大幅降低学习模型误差，
+因此消融必须在新特征集上重做，见 docs/experiment_log.md EXP-20261021-04/05），
+输出文件名加 `_tw` 后缀，与主特征集结果分开保存。
+
 输出：
     outputs/metrics/ablation_results.csv  长表：model/zone/feature_set/split/指标
     outputs/metrics/ablation_summary.csv  测试集对照汇总（绝对/相对变化）
     outputs/figures/fig9_ablation.png     测试集 RMSE 对照图
+
+用法：
+    python src/ablation.py                  # 主特征集
+    python src/ablation.py --target-week    # 含目标对齐周特征的特征集
 """
 
 from __future__ import annotations
@@ -63,14 +72,16 @@ def load_gbt_configs() -> dict[str, dict]:
     return out
 
 
-def run_ablation() -> pd.DataFrame:
+def run_ablation(target_week: bool = False) -> pd.DataFrame:
     df, _ = clean_data()
     gbt_configs = load_gbt_configs()
 
     rows = []
     for zone in ZONES:
         for set_name, include_weather in FEATURE_SETS.items():
-            X, y, meta = build_zone_samples(df, zone, include_weather=include_weather)
+            X, y, meta = build_zone_samples(
+                df, zone, include_weather=include_weather, include_target_week=target_week
+            )
             train_mask = (meta["split"] == "train").to_numpy()
             X_train, y_train = X.to_numpy()[train_mask], y.to_numpy()[train_mask]
 
@@ -153,14 +164,25 @@ def make_figure(results: pd.DataFrame, out_path: Path) -> None:
 
 
 def main() -> int:
-    results = run_ablation()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="C2 天气特征消融实验")
+    parser.add_argument(
+        "--target-week",
+        action="store_true",
+        help="两组都加入目标时刻对齐的上周同期特征 load_lag_target_week",
+    )
+    args = parser.parse_args()
+    suffix = "_tw" if args.target_week else ""
+
+    results = run_ablation(target_week=args.target_week)
     summary = make_summary(results)
 
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    results.to_csv(METRICS_DIR / "ablation_results.csv", index=False)
-    summary.to_csv(METRICS_DIR / "ablation_summary.csv", index=False)
-    make_figure(results, FIGURES_DIR / "fig9_ablation.png")
+    results.to_csv(METRICS_DIR / f"ablation_results{suffix}.csv", index=False)
+    summary.to_csv(METRICS_DIR / f"ablation_summary{suffix}.csv", index=False)
+    make_figure(results, FIGURES_DIR / f"fig9_ablation{suffix}.png")
 
     pd.set_option("display.width", 160)
     print("== 消融汇总（测试集，delta 为 B 组 − A 组，负值表示加天气后误差下降）==")

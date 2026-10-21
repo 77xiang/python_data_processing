@@ -229,6 +229,8 @@ def main() -> int:
     preds = load_all_predictions()
     table3 = comparison[comparison["split"] == "test"][["model", "zone", "mae", "rmse"]].copy()
     table3 = pd.concat([table3, total_metrics(preds)], ignore_index=True)
+    # 课程要求同时给出 MSE；由 RMSE 平方得到，与逐点计算完全等价
+    table3["mse"] = table3["rmse"] ** 2
     table3.to_csv(METRICS_DIR / "report_table3.csv", index=False)
 
     improvement = improvement_vs_naive(comparison)

@@ -37,15 +37,23 @@ from src.features import (  # noqa: E402
 )
 from src.splits import (  # noqa: E402
     EXPECTED_N_ROWS,
+    EXPECTED_PURGED,
     EXPECTED_SPLITS,
     EXPECTED_TEST_TARGET,
+    FORECAST_HORIZON,
+    PURGE,
+    purge_ranges,
+    split_labels,
     split_origin_indices,
+    split_ranges,
     verify_against_plan,
 )
 
 # 人工核对用的预测起点（行索引）：首起点、B1 示例点、各切分边界点、末起点
-SPOT_ORIGINS = [1008, 23265, 36988, 36989, 44698, 44699, 52409]
+SPOT_ORIGINS = [1008, 23265, 36982, 36989, 44692, 44699, 52409]
 SPOT_SPLITS = ["train", "train", "train", "val", "val", "test", "test"]
+# purge 后的期望样本数（训练集/验证集末尾各剔除 6 个起点）
+EXPECTED_COUNTS = {"train": 35975, "val": 7704, "test": 7711}
 
 _DF: pd.DataFrame | None = None
 
@@ -63,9 +71,7 @@ def test_splits_match_plan() -> None:
     assert summary["n_rows"] == EXPECTED_N_ROWS
 
     indices = split_origin_indices(len(df))
-    assert {k: len(v) for k, v in indices.items()} == {
-        "train": 35981, "val": 7710, "test": 7711,
-    }
+    assert {k: len(v) for k, v in indices.items()} == EXPECTED_COUNTS
     ts = df["timestamp"]
     for name, (exp_n, exp_first, exp_last) in EXPECTED_SPLITS.items():
         idx = indices[name]
@@ -74,6 +80,36 @@ def test_splits_match_plan() -> None:
     test_idx = indices["test"]
     assert str(ts.iloc[test_idx[0] + 6]) == EXPECTED_TEST_TARGET[0]
     assert str(ts.iloc[test_idx[-1] + 6]) == EXPECTED_TEST_TARGET[1]
+
+
+def test_purge_cuts_boundary_leakage() -> None:
+    """purge 段被剔除，且任一子集的目标区间不与下一子集的起点区间重叠。"""
+    df = _df()
+    n = len(df)
+    ts = df["timestamp"]
+    ranges = split_ranges(n)
+    purged = purge_ranges(n)
+
+    # 1) purge 段本身不属于任何子集
+    labels = split_labels(np.arange(n), n)
+    for name, (start, end) in purged.items():
+        assert set(labels[start : end + 1]) == {"purge"}, f"{name} 未全部标记为 purge"
+        assert end - start + 1 == PURGE
+        assert (start, end) not in [ranges[s] for s in ("train", "val", "test")]
+
+    # 2) 末起点目标时刻 < 下一子集首起点时刻（边界泄漏已切断）
+    for prev_name, next_name in (("train", "val"), ("val", "test")):
+        prev_last_target = ts.iloc[ranges[prev_name][1] + FORECAST_HORIZON]
+        next_first_origin = ts.iloc[ranges[next_name][0]]
+        assert prev_last_target < next_first_origin, (
+            f"{prev_name} 末起点目标 {prev_last_target} 落入 {next_name} 起点区间"
+        )
+
+    # 3) 剔除前后：训练集/验证集各少 PURGE 个，测试集完全不变
+    indices = split_origin_indices(n)
+    assert len(indices["train"]) == 35975
+    assert len(indices["val"]) == 7704
+    assert len(indices["test"]) == EXPECTED_SPLITS["test"][0]
 
 
 def test_all_zones_share_identical_splits() -> None:
@@ -140,7 +176,7 @@ def test_sample_counts_and_columns() -> None:
     X, y, meta = build_zone_samples(df, "zone1")
     assert len(X) == 51402
     assert meta["split"].value_counts().to_dict() == {
-        "train": 35981, "val": 7710, "test": 7711,
+        **EXPECTED_COUNTS, "purge": 12,
     }
     expected_cols = list(HISTORY_LAGS) + TIME_FEATURES + WEATHER_COLUMNS
     assert list(X.columns) == expected_cols
@@ -197,6 +233,7 @@ def _print_spot_check_table() -> None:
 def main() -> int:
     tests = [
         test_splits_match_plan,
+        test_purge_cuts_boundary_leakage,
         test_all_zones_share_identical_splits,
         test_feature_index_alignment,
         test_backward_only_candidates,
