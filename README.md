@@ -4,21 +4,42 @@
 
 - 数据：城市电力负荷 CSV（10 分钟采样，2017 年 364 天，含温度/湿度/风速/辐射及三个分区负荷，52,416 行）
 - 成员：郑宜桥（A，数据处理与 EDA）、况子昱（B，预测模型与时间序列验证）、徐启翔（C，消融、误差分析与报告整合）
-- 协议与文档：[docs/experiment_plan.md](docs/experiment_plan.md)（B1 实验协议）、[docs/model_delivery_report.md](docs/model_delivery_report.md)（B6 交付报告）、[docs/data_audit.md](docs/data_audit.md)、[docs/data_interface.md](docs/data_interface.md)、[docs/report_plan.md](docs/report_plan.md)、[docs/error_analysis_findings.md](docs/error_analysis_findings.md)
+- 协议与文档：[docs/experiment_plan.md](docs/experiment_plan.md)（B1 实验协议）、[docs/model_delivery_report.md](docs/model_delivery_report.md)（B6 交付报告）、[docs/data_audit.md](docs/data_audit.md)、[docs/data_interface.md](docs/data_interface.md)、[docs/eda_findings.md](docs/eda_findings.md)（时序规律）、[docs/weather_findings.md](docs/weather_findings.md)（天气关系）、[docs/report_tables.md](docs/report_tables.md)（表 1/2）、[docs/handoff_report.md](docs/handoff_report.md)（数据模块交接）、[docs/report_plan.md](docs/report_plan.md)、[docs/error_analysis_findings.md](docs/error_analysis_findings.md)
 
 ## 目录结构
 
 ```
 data/raw/            原始 CSV（不入 git，需本地放置）
 data/processed/      清洗结果（不入 git，运行生成）
-src/                 数据处理（A2）、切分与特征（B2）、模型与评价（B3/B4）、
-                     统一比较（B5）、天气消融（C2）、误差分析（C3）
+src/                 数据审计与清洗（A1/A2）、时序规律与天气关系（A3/A4）、报告表格（A）、
+                     切分与特征（B2）、模型与评价（B3/B4）、统一比较（B5）、
+                     天气消融（C2）、误差分析（C3）
 tests/               切分/特征、模型、交付三套检查（共 19 项）
 outputs/predictions/ 三个模型的测试集预测（协议 8.1）
-outputs/metrics/     指标、GBT 调参明细与配置、模型对比表、消融与误差分析结果
-outputs/figures/     图 7（真实 vs 预测）、图 8（误差分析）、图 9（消融）、残差散点
-docs/                协议、报告计划、实验日志、交付报告、误差分析发现
+outputs/metrics/     指标、GBT 调参明细与配置、模型对比表、消融与误差分析结果；
+                     另含数据与 EDA 的 eda_*.csv、weather_correlation.csv、temperature_bins.csv、
+                     report_table1/2.csv
+outputs/figures/     图 1–4（时序规律）、图 5–6（天气关系）、
+                     图 7（真实 vs 预测）、图 8（误差分析）、图 9（消融）、残差散点
+docs/                协议、报告计划、实验日志、交付报告、误差分析发现、EDA 结论与交接报告
 ```
+
+## 复现成员 A 的数据与 EDA
+
+```bash
+# 1. 将原始数据放入 data/raw/题4_城市电力负荷.csv（不入 git）
+# 2. 数据质量审计
+python src/data_audit.py --input data/raw/题4_城市电力负荷.csv --output docs/data_audit.md
+# 3. 清洗，生成 data/processed/power_load_clean.csv
+python src/data_cleaning.py
+# 4. 时序规律（图 1–4）与天气关系（图 5–6）
+python src/eda.py
+python src/weather_analysis.py
+# 5. 报告表 1、表 2
+python src/report_tables.py
+```
+
+脚本全部以项目根目录为基准定位数据与输出，可从任意工作目录调用。图 1–4 为日/周/季节规律，图 5–6 为天气相关性与温度分箱，数字明细在 `outputs/metrics/eda_*.csv`、`weather_correlation.csv`、`temperature_bins.csv`。逐张图的核心观察与局限见 [docs/eda_checklist.md](docs/eda_checklist.md)，接口约定见 [docs/data_interface.md](docs/data_interface.md)。
 
 ## 复现成员 B 的主实验
 

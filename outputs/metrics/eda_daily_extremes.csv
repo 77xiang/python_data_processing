@@ -1,0 +1,4 @@
+﻿zone,n_days,peak_hour_mode,peak_share_18_21_pct,peak_share_20_pct,trough_share_4_7_pct,daily_peak_mean,daily_peak_cv_pct
+zone1_power,364,20,98.9,44.8,89.6,44252.51,7.4
+zone2_power,364,19,97.5,34.9,81.0,28531.26,12.5
+zone3_power,364,20,99.2,65.7,87.6,26136.43,27.7
