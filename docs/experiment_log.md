@@ -23,7 +23,8 @@
 | EXP-20261020-04 | 10-20 | 郑宜桥 | 负荷时序规律分析（A3，图 1–4、报告第 4 章素材） | 2017 全年，52,416 条 | A2 清洗结果，不做额外变换 | 描述性统计：按小时、星期、月份分组求均值；7 日滑动平均仅用于图 1 展示趋势 | —（确定性） | 不产预测指标；分区特征见 outputs/metrics/eda_summary.csv（峰谷比 1.89/1.89/2.23，周末效应 −3.6%/−8.2%/+1.2%，夏冬比 1.17/1.12/1.59） | outputs/figures/fig1_zone_overview.png、fig2_hourly_profile.png、fig3_weekday_pattern.png、fig4_monthly_pattern.png；outputs/metrics/eda_hourly_profile.csv、eda_weekday_profile.csv、eda_monthly_profile.csv、eda_summary.csv；docs/eda_findings.md | 原始数据未注明负荷单位，数值按原始单位报告；区域 3 的月度下滑含趋势成分，未做季节性归因 |
 | EXP-20261020-05 | 10-20 | 郑宜桥 | 天气与负荷关系（A4，图 5–6、报告第 5 章素材） | 2017 全年，52,416 条 | A2 清洗结果，无缺失 | Pearson 与 Spearman 相关；温度按 1 ℃ 分箱求均值，样本 < 50 的箱不参与作图 | —（确定性） | 温度相关 Z1 0.44 / Z2 0.38 / Z3 0.49；6.5→33.5 ℃ 分箱均值 Z1 +69%、Z2 +69%、Z3 +158%；33 ℃ 以上进入平台 | outputs/figures/fig5_weather_correlation.png、fig6_temperature_relation.png；outputs/metrics/weather_correlation.csv、temperature_bins.csv；docs/weather_findings.md | 未观察到低温采暖回升段（3–5 ℃ 负荷不高于 20 ℃ 附近）；相关未去趋势，仅作描述性指标 |
 | EXP-20261021-01 | 10-21 | 徐启翔 | 结果解释与结论草稿（C4），不产新实验，综合 EXP-03~06 与 C2/C3 结果回答手册 6 个问题 | — | — | — | — | — | docs/results_conclusions.md（含结论—证据—图表对照表） | 负面结果如实写入：学习模型整体不敌基线、GBT-Z3 消融变差；待 B、A 复核后并入第 7 章 |
-| EXP-20261021-02 | 10-21 | 徐启翔 | 报告整合（C5），不产新实验 | — | — | — | — | — | docs/report_draft.md（按模板章节的完整初稿） | 第 2–5 章取自 A 成稿原样并入；第 6 章方法按 experiment_plan 与日志撰写；摘要按已固定的实验结果撰写；第 8 章留 B、C 个人说明待补；附录含复现说明 |
+| EXP-20261021-02 | 10-21 | 徐启翔 | 报告整合（C5），不产新实验 | — | — | — | — | — | docs/report_draft.md（按模板章节的完整初稿） | 第 2–5 章取自 A 成稿原样并入；第 6 章方法按 experiment_plan 与日志撰写；摘要按已固定的实验结果撰写；附录含复现说明 |
+| EXP-20261021-03 | 10-21 | 徐启翔 | 报告转 Word 并插入真实图表（C5 收尾），不产新实验 | — | — | — | — | — | output/c5-report-word-20261021/stage3/城市电力负荷分析与预测_项目报告_图表版.docx | 图 1–9（共 11 张 PNG：图 8 拆 a/b/c 三张）与表 1–4 全部插入正文对应位置，表题在表上方、图题在图下方；转换校验 224 段内容无缺失、33/33 标题样式绑定、目录与页码生成正常；第 8.2 节三人个人说明已并入（况子昱段为代拟稿，待本人确认） |
 
 ## 收尾核对
 
@@ -34,4 +35,4 @@
 - [x] 误差分析完成（徐启翔，C3）
 - [x] 模型交付与复现检查完成（况子昱，B6，见 docs/model_delivery_report.md）
 - [x] 结果讨论与结论草稿完成（徐启翔，C4，见 docs/results_conclusions.md，EXP-20261021-01）
-- [ ] 报告里所有数字都能对上日志（C5 整合时核对）
+- [x] 报告里所有数字都能对上日志（2026-10-21 徐启翔逐项回查 report_table3、improvement_vs_naive、ablation_summary、error_overall、error_peak_vs_normal、weather_correlation；发现并修正一处表述：LR-Z3 的 MAE 同样优于基线 −2.69%）
