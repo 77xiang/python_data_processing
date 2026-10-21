@@ -1,0 +1,54 @@
+schema_version: 1
+request_id: c5-report-word-20261021
+created_at: 2026-10-21T15:30:00+08:00
+updated_at: 2026-10-21T15:30:00+08:00
+entry_type: beautify_only
+stage_chain: [2, 3]
+
+output_docx_path: C:\Users\xiang\python_data_processing\output\c5-report-word-20261021\stage3\城市电力负荷分析与预测_项目报告.docx
+output_docx_user_specified: false
+
+current_stage: completed
+
+stages:
+  stage_0:
+    status: completed
+    completed_at: 2026-10-21T15:30:00+08:00
+    decision: beautify_only
+  stage_1:
+    status: skipped
+    started_at: null
+    completed_at: null
+    output_path: null
+    genre: null
+    expert_used: null
+    route_tag: null
+  stage_2:
+    status: completed
+    started_at: 2026-10-21T15:30:00+08:00
+    completed_at: 2026-10-21T15:40:00+08:00
+    route: html
+    html_sub: template
+    output_path: stage2/formatted-城市电力负荷分析与预测.html
+    output_format: html
+    skills_invoked: [design-token, doc-typeset]
+    design_tokens_path: stage2/design_tokens.json
+    fallback: false
+    fallback_reason: null
+  stage_3:
+    status: completed
+    started_at: 2026-10-21T15:42:00+08:00
+    completed_at: 2026-10-21T15:42:00+08:00
+    executor: doc-converter
+    input_format: html
+    output_path: C:\Users\xiang\python_data_processing\output\c5-report-word-20261021\stage3\城市电力负荷分析与预测_项目报告.docx
+    skill_used: [html-to-doc]
+    present_files_opened: true
+    fallback: false
+    fallback_reason: null
+
+consistency_check:
+  output_files_exist: pass
+  stage_chain_complete: pass
+  last_checked_at: 2026-10-21T15:43:00+08:00
+  errors: []
