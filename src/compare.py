@@ -229,6 +229,21 @@ def main() -> int:
     preds = load_all_predictions()
     table3 = comparison[comparison["split"] == "test"][["model", "zone", "mae", "rmse"]].copy()
     table3 = pd.concat([table3, total_metrics(preds)], ignore_index=True)
+    # 课程要求同时给出 MSE。MSE 按定义逐点计算（预测误差平方的均值），不依赖已舍入的
+    # RMSE：MSE = mean((y_hat - y)^2) = rmse^2 在未舍入前提下恒等。逐区口径与 model_comparison
+    # 的 rmse 同源（同一预测文件逐点计算）；合并口径直接从全量预测逐点算。
+    def _mse(sub: pd.DataFrame) -> float:
+        return float(((sub["predicted"] - sub["actual"]) ** 2).mean())
+
+    mse_map = {
+        (m, z): _mse(preds[(preds["model"] == m) & (preds["zone"] == z)])
+        for m in MODEL_ORDER
+        for z in list(preds[preds["model"] == m]["zone"].unique()) + ["total"]
+    }
+    mse_map.update({(m, "total"): _mse(preds[preds["model"] == m]) for m in MODEL_ORDER})
+    table3["mse"] = [
+        mse_map[(r.model, r.zone)] for r in table3[["model", "zone"]].itertuples()
+    ]
     table3.to_csv(METRICS_DIR / "report_table3.csv", index=False)
 
     improvement = improvement_vs_naive(comparison)

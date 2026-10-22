@@ -41,10 +41,6 @@ WEATHER_KEYWORDS = (
 )
 
 
-# ---------------------------------------------------------------------------
-# 读取与列识别
-# ---------------------------------------------------------------------------
-
 def resolve_input(explicit: str | None) -> Path:
     """确定要审计的 CSV 路径。"""
     if explicit:
@@ -77,7 +73,7 @@ def read_csv_robust(path: Path) -> tuple[pd.DataFrame, str]:
             try:
                 df = pd.read_csv(path, encoding=enc, **kwargs)
                 if df.shape[1] == 1:
-                    continue  # 分隔符可能判断错了
+                    continue
                 return df, enc
             except Exception as exc:  # noqa: BLE001
                 errors.append(f"{enc}{kwargs}: {exc}")
@@ -172,10 +168,6 @@ def numeric_profile(df: pd.DataFrame, col: str, ts: pd.Series | None) -> dict:
     return prof
 
 
-# ---------------------------------------------------------------------------
-# 审计主流程
-# ---------------------------------------------------------------------------
-
 def analyze(df: pd.DataFrame, path: Path) -> dict:
     res: dict = {
         "file": path,
@@ -246,10 +238,6 @@ def analyze(df: pd.DataFrame, path: Path) -> dict:
     return res
 
 
-# ---------------------------------------------------------------------------
-# Markdown 渲染
-# ---------------------------------------------------------------------------
-
 def fnum(x, nd: int = 4) -> str:
     if x is None or (isinstance(x, float) and (np.isnan(x) or np.isinf(x))):
         return ""
@@ -308,7 +296,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
     add(f"- 数据形状：**{n_rows:,} 行 × {n_cols} 列**")
     add("")
 
-    # 1. 字段概况
     add("## 1. 字段与数据概况")
     add("")
     add("### 1.1 列名、类型与缺失")
@@ -354,7 +341,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
         add(md_table(["原始列名", "建议列名"], rows))
         add("")
 
-    # 2. 时间维度
     add("## 2. 时间维度")
     add("")
     if res["time_col"] is None:
@@ -401,7 +387,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
                 add(md_table(["日期", "记录数"], rows))
     add("")
 
-    # 3. 缺失与重复
     add("## 3. 缺失值与重复")
     add("")
     add(f"- 缺失单元格总数：{res['missing_total']:,}")
@@ -417,7 +402,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
         add(md_table(["列名", "缺失数", "缺失率"], rows))
     add("")
 
-    # 4. 负荷与天气字段
     add("## 4. 负荷与天气字段")
     add("")
     add(f"- 识别为负荷列的字段：{', '.join(f'`{c}`' for c in res['load_cols']) or '无'}")
@@ -440,7 +424,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
         add(md_table(["列名", "最小值", "最大值", "峰值时间", "谷值时间", "负值数", "零值数"], rows))
     add("")
 
-    # 5. 异常值标记
     add("## 5. 异常值标记（只标记，不删除）")
     add("")
     add("按 IQR 规则统计，仅用于提示，不代表这些点一定是错误数据。")
@@ -472,7 +455,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
             "仍需结合字段含义判断，不能仅凭这一条结论删除数据。")
         add("")
 
-    # 6. 结论分类
     confirmed: list[str] = []
     investigate: list[str] = []
     passed: list[str] = []
@@ -532,7 +514,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
     add("\n".join(f"- {x}" for x in passed) if passed else "- 无。")
     add("")
 
-    # 7. 对后续的输入
     add("## 7. 对后续工作的输入")
     add("")
     if res["time_col"] is not None and res["interval_mode"] is not None:
@@ -573,7 +554,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
     add("- 本报告只做质量审计，不包含建模结论；清洗规则需在 A2 中依据本报告确定。")
     add("")
 
-    # 8. 复现
     add("## 8. 复现方式")
     add("")
     add("```bash")
@@ -582,10 +562,6 @@ def render_report(res: dict, path: Path, encoding: str) -> str:
     add("")
     return "\n".join(lines)
 
-
-# ---------------------------------------------------------------------------
-# 入口
-# ---------------------------------------------------------------------------
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="A1 数据质量审计")

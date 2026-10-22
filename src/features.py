@@ -51,6 +51,13 @@ HISTORY_LAGS = {
     "load_lag_1008": 1008,
 }
 
+# 目标时刻对齐的上周同期滞后：y(t+6-1008) = y(t-1002)
+# 历史同期基线用的正是这个值；默认主特征集里的 load_lag_1008 是"起点前一周"，
+# 比目标时刻早一小时。该特征由 include_target_week 开关控制，默认关闭，
+# 仅在追加验证实验（EXP-20261021-04）中开启
+TARGET_WEEK_LAG_NAME = "load_lag_target_week"
+TARGET_WEEK_LAG = WEEK_STEPS - FORECAST_HORIZON   # 1002
+
 TIME_FEATURES = ["hour", "dayofweek", "month", "hour_sin", "hour_cos"]
 
 # 候选扩展特征（默认不进主特征集，B3 可用验证集决定是否保留）
@@ -93,16 +100,20 @@ def _validate_df(df: pd.DataFrame, include_weather: bool) -> None:
 def feature_groups(
     include_weather: bool = True,
     include_candidates: bool = False,
+    include_target_week: bool = False,
 ) -> dict[str, list[str]]:
     """返回特征分组，供 C2 消融与报告引用。
 
     - history + time          ：消融 A 组（无天气）
     - history + time + weather：消融 B 组（主实验特征集）
+    - include_target_week=True 时，目标对齐的上周同期特征追加在 history 组末尾
     """
     groups: dict[str, list[str]] = {
         "history": list(HISTORY_LAGS),
         "time": list(TIME_FEATURES),
     }
+    if include_target_week:
+        groups["history"] = groups["history"] + [TARGET_WEEK_LAG_NAME]
     if include_candidates:
         groups["history"] = groups["history"] + list(CANDIDATE_FEATURES)
     if include_weather:
@@ -116,6 +127,7 @@ def build_zone_samples(
     *,
     include_weather: bool = True,
     include_candidates: bool = False,
+    include_target_week: bool = False,
 ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     """为单个区域构造预测样本。
 
@@ -124,6 +136,8 @@ def build_zone_samples(
         zone: 'zone1' | 'zone2' | 'zone3'（或对应列名）。
         include_weather: 是否加入起点时刻的天气特征（C2 消融开关）。
         include_candidates: 是否加入候选扩展特征（默认关闭，与协议一致）。
+        include_target_week: 是否加入目标时刻对齐的上周同期特征 y(t-1002)
+            （默认关闭，供追加验证实验使用；值在起点时已是历史观测）。
 
     返回 (X, y, meta)，行索引均为预测起点的清洗后行号：
         X    特征矩阵，列固定（见模块 docstring）
@@ -141,7 +155,7 @@ def build_zone_samples(
 
     X = pd.DataFrame(index=origins)
 
-    # 历史负荷滞后特征（相对起点 t 回溯，全部 ≤ t）
+    # 历史负荷滞后特征（相对起点t回溯，全部 ≤ t）
     for name, k in HISTORY_LAGS.items():
         X[name] = load[origins - k]
 
@@ -161,6 +175,11 @@ def build_zone_samples(
             season7 += load[origins - k * DAY_STEPS]
         X["load_season7_mean"] = season7 / SEASON_DAYS
 
+    # 目标时刻对齐的上周同期：y(t+6-1008) = y(t-1002)，与历史同期基线同源
+    # （基线不消费特征矩阵，此处把同一条信息显式交给学习模型）
+    if include_target_week:
+        X[TARGET_WEEK_LAG_NAME] = load[origins - TARGET_WEEK_LAG]
+
     # 时间特征：取预测起点 t 的时刻
     origin_dt = pd.DatetimeIndex(ts_arr[origins])
     hour = origin_dt.hour.to_numpy(dtype=float)
@@ -170,7 +189,7 @@ def build_zone_samples(
     X["hour_sin"] = np.sin(2 * np.pi * hour / 24)
     X["hour_cos"] = np.cos(2 * np.pi * hour / 24)
 
-    # 天气特征：t 时刻同步观测（可用性假设见协议 3.3）
+    # 天气特征：t时刻同步观测（可用性假设见协议3.3）
     if include_weather:
         for col in WEATHER_COLUMNS:
             X[col] = df[col].to_numpy(dtype=float)[origins]

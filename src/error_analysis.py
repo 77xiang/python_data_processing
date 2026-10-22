@@ -13,14 +13,17 @@
    比较高峰 vs 普通时段误差；
 4. 残差分布与残差随时间变化（图）。
 
-输出：
-    outputs/metrics/error_overall.csv        区域×模型总体指标
-    outputs/metrics/error_by_hour.csv        按小时分组（测试集）
-    outputs/metrics/error_by_dayofweek.csv   按星期分组（测试集）
-    outputs/metrics/error_peak_vs_normal.csv 高峰/普通时段对比（测试集）
-    outputs/figures/fig8_error_by_hour.png   各区域分小时 MAE
-    outputs/figures/fig8_residual_dist.png   残差分布（主模型 GBT）
-    docs/error_analysis_findings.md          结果段落草稿（C4 润色）
+输出（<suffix> 为 --tag 传入的后缀，缺省为空）：
+    outputs/metrics/error_overall<suffix>.csv        区域×模型总体指标
+    outputs/metrics/error_by_hour<suffix>.csv        按小时分组（测试集）
+    outputs/metrics/error_by_dayofweek<suffix>.csv   按星期分组（测试集）
+    outputs/metrics/error_by_month<suffix>.csv       按月份分组（测试集）
+    outputs/metrics/error_peak_vs_normal<suffix>.csv 高峰/普通时段对比（测试集）
+    outputs/figures/fig8_error_by_hour<suffix>.png   各区域分小时 MAE
+    outputs/figures/fig8_residual_dist<suffix>.png   残差分布（主模型 GBT）
+    outputs/figures/fig8_residual_time<suffix>.png   残差随时间变化（GBT）
+
+说明：输出文件名与输入预测文件共用同一后缀，避免不同特征口径的两次分析互相覆盖。
 """
 
 from __future__ import annotations
@@ -59,10 +62,17 @@ plt.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei"]
 plt.rcParams["axes.unicode_minus"] = False
 
 
-def load_predictions() -> pd.DataFrame:
+def load_predictions(tag: str = "") -> pd.DataFrame:
+    """读取测试集预测文件；tag 非空时读取 predictions_<model><tag>.csv。
+
+    tag='_tw' 对应"加入目标时刻对齐周特征"的模型（src/probe_target_week.py 产出）。
+    """
     frames = []
     for m in MODELS:
-        f = pd.read_csv(PRED_DIR / f"predictions_{m}.csv", parse_dates=["origin_timestamp", "target_timestamp"])
+        f = pd.read_csv(
+            PRED_DIR / f"predictions_{m}{tag}.csv",
+            parse_dates=["origin_timestamp", "target_timestamp"],
+        )
         frames.append(f)
     df = pd.concat(frames, ignore_index=True)
     df["error"] = df["predicted"] - df["actual"]
@@ -184,8 +194,19 @@ def fig_residual_time(pred: pd.DataFrame, out: Path) -> None:
 
 
 def main() -> int:
-    pred = load_predictions()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="C3 分区域与高负荷时段误差分析")
+    parser.add_argument(
+        "--tag",
+        default="",
+        help="预测文件后缀，如 _tw 表示分析加入目标对齐周特征后的模型",
+    )
+    args = parser.parse_args()
+
+    pred = load_predictions(args.tag)
     thresholds = train_thresholds()
+    print(f"分析对象：predictions_<model>{args.tag or ''}.csv")
     print("高负荷阈值（训练集 Q90）：", {k: round(v, 1) for k, v in thresholds.items()})
 
     overall = overall_metrics(pred)
@@ -196,15 +217,17 @@ def main() -> int:
 
     METRICS_DIR.mkdir(parents=True, exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    overall.to_csv(METRICS_DIR / "error_overall.csv", index=False)
-    by_hour.to_csv(METRICS_DIR / "error_by_hour.csv", index=False)
-    by_dow.to_csv(METRICS_DIR / "error_by_dayofweek.csv", index=False)
-    by_month.to_csv(METRICS_DIR / "error_by_month.csv", index=False)
-    peak.to_csv(METRICS_DIR / "error_peak_vs_normal.csv", index=False)
+    suffix = args.tag  # 与输入预测文件同后缀，两次分析互不覆盖
+    print(f"输出后缀：{suffix or '(无，写入主实验同名文件)'}")
+    overall.to_csv(METRICS_DIR / f"error_overall{suffix}.csv", index=False)
+    by_hour.to_csv(METRICS_DIR / f"error_by_hour{suffix}.csv", index=False)
+    by_dow.to_csv(METRICS_DIR / f"error_by_dayofweek{suffix}.csv", index=False)
+    by_month.to_csv(METRICS_DIR / f"error_by_month{suffix}.csv", index=False)
+    peak.to_csv(METRICS_DIR / f"error_peak_vs_normal{suffix}.csv", index=False)
 
-    fig_error_by_hour(by_hour, FIGURES_DIR / "fig8_error_by_hour.png")
-    fig_residual_dist(pred, FIGURES_DIR / "fig8_residual_dist.png")
-    fig_residual_time(pred, FIGURES_DIR / "fig8_residual_time.png")
+    fig_error_by_hour(by_hour, FIGURES_DIR / f"fig8_error_by_hour{suffix}.png")
+    fig_residual_dist(pred, FIGURES_DIR / f"fig8_residual_dist{suffix}.png")
+    fig_residual_time(pred, FIGURES_DIR / f"fig8_residual_time{suffix}.png")
 
     pd.set_option("display.width", 200)
     print("\n== 总体指标（测试集）==")

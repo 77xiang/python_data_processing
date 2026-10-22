@@ -1,5 +1,12 @@
-numpy
-pandas
-matplotlib
-scikit-learn
+# 项目依赖
+#
+# scikit-learn 必须锁定版本：HistGradientBoostingRegressor 的数值结果会随版本发生
+# 微小漂移（实测 1.6.1 与 1.9.1 之间，消融与主实验的 GBT 指标相差 0.3%–3.1%）。
+# 全组统一为 1.6.1；线性回归与全部结构性指标（区间、样本数、切分）不受影响。
+scikit-learn==1.6.1
+
+# 其余依赖给出已验证的下限版本
+numpy>=1.26.4
+pandas>=2.3.3
+matplotlib>=3.9.4
 jupyter
