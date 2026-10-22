@@ -135,7 +135,6 @@ REPLACEMENTS = {
     + note("测试集残差按日取均值后按日期排列，用于检查误差是否随时间漂移。"),
 }
 
-# 表 3 / 表 4 的表注插到对应表格之前（表题在表上方）
 TABLE_CAPTIONS = {
     "<tr><th>模型</th><th>Z1 MAE/RMSE</th>": tab_cap("表 3　三个模型在测试集上的对比（原特征集）")
     + note("注：测试集为 2017-11-07 09:50 至 2017-12-30 22:50，每区域 7,711 个样本；"
@@ -156,7 +155,7 @@ def md_to_html(text: str) -> str:
         block = block.strip()
         if not block or block.startswith("#"):
             continue
-        block = strip_md(block)  # 先删空格再转 <b>，理由同 build_report_html.inline
+        block = strip_md(block)
         block = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", block)
         if block.startswith("**") or block.startswith("<b>") and block.endswith("</b>") and "\n" not in block:
             out.append(f'<p class="member-name">{strip_cjk_spaces(block)}</p>')
@@ -191,7 +190,6 @@ def load_member_sections() -> str:
 def main() -> None:
     html = SRC.read_text(encoding="utf-8")
 
-    # 1) 追加图表相关样式
     extra_css = (
         '  .tab-cap { font-family: "SimHei", "SimSun", serif; font-size: 10.5pt; '
         'text-align: center; margin: 12pt 0 4pt; }\n'
@@ -209,11 +207,9 @@ def main() -> None:
     )
     html = html.replace("</style>", extra_css + "</style>")
 
-    # 2) 表 3 / 表 4 表题
     for anchor, caption_html in TABLE_CAPTIONS.items():
         html = html.replace(anchor, caption_html + anchor, 1)
 
-    # 3) 占位段替换（键与占位文本都去掉空格后比较，容忍"表 3"变"表3"）
     def repl(m: re.Match) -> str:
         inner = m.group(1)
         inner_norm = re.sub(r"\s+", "", inner)

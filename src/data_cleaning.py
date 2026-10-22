@@ -31,7 +31,6 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 DEFAULT_OUTPUT = PROCESSED_DIR / "power_load_clean.csv"
 DEFAULT_FLAGS = PROCESSED_DIR / "anomaly_flags.csv"
 
-# 原始列名（按空白归一化后的形式）到统一列名
 RAW_COLUMN_MAP = {
     "datetime": "timestamp",
     "temperature": "temperature",
@@ -55,10 +54,6 @@ LOAD_COLUMNS = ["zone1_power", "zone2_power", "zone3_power"]
 REQUIRED_COLUMNS = ["timestamp", "temperature", "humidity", "wind_speed"] + LOAD_COLUMNS
 OUTPUT_COLUMNS = ["timestamp"] + WEATHER_COLUMNS + LOAD_COLUMNS
 
-
-# ---------------------------------------------------------------------------
-# 质量摘要
-# ---------------------------------------------------------------------------
 
 @dataclass
 class DataQualitySummary:
@@ -97,10 +92,6 @@ class DataQualitySummary:
             lines.append(f"未纳入输出的列：{', '.join(self.dropped_columns)}")
         return "\n".join(lines)
 
-
-# ---------------------------------------------------------------------------
-# 读取与列名规整
-# ---------------------------------------------------------------------------
 
 def _normalize_name(name) -> str:
     """折叠连续空白、去首尾空格、转小写，用于匹配原始列名。"""
@@ -182,10 +173,6 @@ def parse_datetime(df: pd.DataFrame, column: str = "timestamp") -> pd.DataFrame:
     return out
 
 
-# ---------------------------------------------------------------------------
-# 校验
-# ---------------------------------------------------------------------------
-
 def _fmt_td(td) -> str | None:
     if td is None or pd.isna(td):
         return None
@@ -243,9 +230,7 @@ def validate_frame(
     )
 
 
-# ---------------------------------------------------------------------------
 # 异常点标记（只输出标记，不修改数据）
-# ---------------------------------------------------------------------------
 
 def iqr_flags(
     df: pd.DataFrame,
@@ -279,10 +264,6 @@ def iqr_flags(
     return pd.DataFrame.from_records(records)
 
 
-# ---------------------------------------------------------------------------
-# 主清洗流程
-# ---------------------------------------------------------------------------
-
 def clean_data(
     path: str | Path | None = None,
     *,
@@ -314,7 +295,6 @@ def clean_data(
 
     df = parse_datetime(df, "timestamp")
 
-    # 数值列强制转换，记录转换失败数量
     coerce_failures = 0
     for col in WEATHER_COLUMNS + LOAD_COLUMNS:
         if col not in df.columns:
@@ -323,7 +303,6 @@ def clean_data(
         df[col] = pd.to_numeric(df[col], errors="coerce")
         coerce_failures += int(before - df[col].notna().sum())
 
-    # 完全重复行：冗余记录，删除并计数
     n_duplicate_rows = int(df.duplicated().sum())
     if n_duplicate_rows:
         df = df.drop_duplicates().reset_index(drop=True)
@@ -342,7 +321,6 @@ def clean_data(
         else:
             raise ValueError("on_duplicate 只能是 'raise' 或 'first'")
 
-    # 时间升序
     df = df.sort_values("timestamp", kind="mergesort").reset_index(drop=True)
 
     # 固定输出列；其余列记录后丢弃，保证接口稳定
@@ -394,10 +372,6 @@ def load_clean(path: str | Path | None = None) -> pd.DataFrame:
         raise ValueError(f"清洗结果缺少列：{missing_cols}")
     return df
 
-
-# ---------------------------------------------------------------------------
-# 命令行入口
-# ---------------------------------------------------------------------------
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="A2 数据读取、校验与清洗")

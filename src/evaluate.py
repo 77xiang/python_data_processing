@@ -59,7 +59,6 @@ GBT_CONFIG_FILE = "gbt_config.csv"
 
 SPLITS = ("train", "val", "test")
 
-# 无调参模型走 run_models()；梯度提升树走 run_gbt_experiment()
 UNTUNED_MODELS = (SEASONAL_NAIVE, LINEAR_REGRESSION)
 
 

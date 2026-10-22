@@ -139,7 +139,6 @@ def test_feature_index_alignment() -> None:
         # 目标时刻 = 起点 + 1 小时；切分标签按起点时间
         assert meta.loc[t, "target_timestamp"] == ts.iloc[t] + pd.Timedelta(hours=1)
         assert meta.loc[t, "split"] == exp_split
-        # 滞后特征与原始行逐一相等（同一数组元素，精确比较）
         assert row["load_lag_0"] == load.iloc[t]
         assert row["load_lag_6"] == load.iloc[t - 6]
         assert row["load_lag_144"] == load.iloc[t - 144]
@@ -183,11 +182,9 @@ def test_sample_counts_and_columns() -> None:
     assert y.name == "target"
     assert list(meta.columns) == ["origin_timestamp", "target_timestamp", "zone", "split"]
 
-    # include_weather=False：天气列不出现（C2 消融 A 组）
     X_no_w, _, _ = build_zone_samples(df, "zone1", include_weather=False)
     assert list(X_no_w.columns) == list(HISTORY_LAGS) + TIME_FEATURES
 
-    # include_candidates=True：候选列追加在天气列之前
     X_c, _, _ = build_zone_samples(df, "zone1", include_candidates=True)
     assert list(X_c.columns) == (
         list(HISTORY_LAGS) + CANDIDATE_FEATURES + TIME_FEATURES + WEATHER_COLUMNS

@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 
 FORECAST_HORIZON = 6      # 提前 1 小时 = 6 个时间步（10 分钟采样）
-WEEK_STEPS = 1008         # 7 天 = 144 步/天 × 7
+WEEK_STEPS = 1008
 TRAIN_RATIO = 0.70
 VAL_RATIO = 0.15
 

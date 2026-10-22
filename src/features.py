@@ -54,7 +54,7 @@ HISTORY_LAGS = {
 # 目标时刻对齐的上周同期滞后：y(t+6-1008) = y(t-1002)
 # 历史同期基线用的正是这个值；默认主特征集里的 load_lag_1008 是"起点前一周"，
 # 比目标时刻早一小时。该特征由 include_target_week 开关控制，默认关闭，
-# 仅在追加验证实验（EXP-20261021-04）中开启。
+# 仅在追加验证实验（EXP-20261021-04）中开启
 TARGET_WEEK_LAG_NAME = "load_lag_target_week"
 TARGET_WEEK_LAG = WEEK_STEPS - FORECAST_HORIZON   # 1002
 

@@ -45,7 +45,6 @@ EXPECTED_COLUMNS = [
 ]
 
 # GBT 消融允许的相对偏差上限：C 机 sklearn 版本与主实验环境不同（见实验日志
-# EXP-20261020-01）。C2 的配置、种子、样本、切分与主实验逐项一致（LR 组逐值
 # 相等已验证），实测最大漂移为 Z2 MAE 3.14%，故容差取 5%
 GBT_ABLATION_TOLERANCE = 0.05
 
@@ -145,7 +144,6 @@ def test_member_c_outputs_crosscheck() -> None:
     comp = pd.read_csv(METR_DIR / "model_comparison.csv")
     comp_test = comp[comp["split"] == "test"].set_index(["model", "zone"])
 
-    # C3 误差分析：直接读我的预测文件，指标应与 model_comparison.csv 完全一致
     overall = pd.read_csv(METR_DIR / "error_overall.csv")
     for _, row in overall.iterrows():
         ref = comp_test.loc[(row["model"], row["zone"])]
@@ -153,7 +151,6 @@ def test_member_c_outputs_crosscheck() -> None:
         assert np.isclose(row["rmse"], ref["rmse"]), f"C3 {row['model']}/{row['zone']} RMSE 与主实验不符"
         assert row["n_samples"] == 7711
 
-    # C2 消融：LR 带天气组与主实验逐值一致（确定性模型）
     ablation = pd.read_csv(METR_DIR / "ablation_results.csv")
     for zone in ("zone1", "zone2", "zone3"):
         lr_b = ablation[

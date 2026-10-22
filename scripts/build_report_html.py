@@ -30,7 +30,6 @@ IDEO_SPACE = "　"
 # 中文（含全角标点）与英文/数字之间的空格一律删除（用户要求）
 _CJK = r"\u4e00-\u9fff\u3001-\u303f\uff00-\uffef"
 _ALNUM = r"A-Za-z0-9"
-# 加粗占位符（\x00）与 <b>/</b> 标签对空格剥离透明：
 # "同源。** 2." 转 <b> 后空格夹在 > 与 < 之间，不透明就逃过剥离
 _TOKEN = r"(?:\x00|</?b>)"
 
@@ -104,7 +103,7 @@ def parse(md_text: str) -> tuple[list[dict], list[str]]:
         target = cur["sections"][-1]["blocks"] if cur["sections"] else cur["blocks"]
         if text.startswith("**关键词：**") or text.startswith("关键词："):
             rest = text.split("：", 1)[1] if "：" in text else ""
-            rest = rest.strip().lstrip("*").strip()  # 去掉 markdown 加粗的残留星号
+            rest = rest.strip().lstrip("*").strip()
             target.append(f'<p><span class="kw">关键词：</span>{inline(rest)}</p>')
         else:
             target.append(f'<p class="body-text">{inline(text)}</p>')
@@ -137,7 +136,7 @@ def parse(md_text: str) -> tuple[list[dict], list[str]]:
             while i < len(lines) and not lines[i].strip().startswith("```"):
                 code.append(lines[i])
                 i += 1
-            i += 1  # 跳过收尾的 ```
+            i += 1
             esc = "\n".join(code).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             # 代码注释/字符串里的中西文空格同样删除（Python 语法空格均为 ASCII 间空格，不受影响）
             esc = strip_cjk_spaces(esc)
@@ -201,7 +200,7 @@ def build_body(chapters: list[dict]) -> str:
         attrs = ' class="chapter" data-page-restart="1"' if n == 1 else ' class="chapter"'
         out.append(f"<section{attrs}>")
         out.append(f'<h1 id="section-{n}">{fmt_heading(ch["title"])}</h1>')
-        if n == 1:  # 摘要块
+        if n == 1:
             out.append('<div class="abstract-block">')
             out.extend(ch["blocks"])
             out.append("</div>")

@@ -70,10 +70,6 @@ def spearman(a: pd.Series, b: pd.Series) -> float:
     return float(a.rank().corr(b.rank()))
 
 
-# ---------------------------------------------------------------------------
-# 图 5
-# ---------------------------------------------------------------------------
-
 def plot_correlation_heatmap(df: pd.DataFrame) -> pd.DataFrame:
     cols = WEATHER + ZONES
     corr = df[cols].corr(method="pearson")
@@ -118,10 +114,6 @@ def compute_correlations(df: pd.DataFrame) -> pd.DataFrame:
             })
     return pd.DataFrame(rows)
 
-
-# ---------------------------------------------------------------------------
-# 图 6
-# ---------------------------------------------------------------------------
 
 def temperature_bins(df: pd.DataFrame) -> pd.DataFrame:
     t = df["temperature"]
@@ -176,10 +168,6 @@ def plot_temperature_relation(df: pd.DataFrame, bins: pd.DataFrame) -> None:
     fig.savefig(FIGURES_DIR / "fig6_temperature_relation.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
-
-# ---------------------------------------------------------------------------
-# 入口
-# ---------------------------------------------------------------------------
 
 def main() -> int:
     setup_chinese_font()

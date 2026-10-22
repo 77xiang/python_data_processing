@@ -51,10 +51,6 @@ SEASON_MAP = {
 EVENING_HOURS = (18, 19, 20, 21)  # 晚高峰时段，用于工作日/周末对比
 
 
-# ---------------------------------------------------------------------------
-# 准备
-# ---------------------------------------------------------------------------
-
 def setup_chinese_font() -> None:
     """挑一个可用的中文字体，避免图里中文变成方块。"""
     from matplotlib import font_manager
@@ -80,10 +76,6 @@ def load_eda_frame() -> pd.DataFrame:
     df["is_weekend"] = df["dow"] >= 5
     return df
 
-
-# ---------------------------------------------------------------------------
-# 图
-# ---------------------------------------------------------------------------
 
 def plot_zone_overview(df: pd.DataFrame) -> None:
     """图 1：三分区日均负荷的全年走势，用于看季节趋势与区域量级差异。"""
@@ -193,10 +185,6 @@ def plot_monthly_pattern(df: pd.DataFrame) -> None:
     fig.savefig(FIGURES_DIR / "fig4_monthly_pattern.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
-
-# ---------------------------------------------------------------------------
-# 明细数字
-# ---------------------------------------------------------------------------
 
 def _to_long(frame: pd.DataFrame, index_name: str, value_name: str) -> pd.DataFrame:
     long = frame.reset_index().melt(id_vars=index_name, var_name="zone", value_name=value_name)
@@ -310,10 +298,6 @@ def build_daily_extremes(df: pd.DataFrame) -> pd.DataFrame:
         })
     return pd.DataFrame(rows)
 
-
-# ---------------------------------------------------------------------------
-# 入口
-# ---------------------------------------------------------------------------
 
 def main() -> int:
     setup_chinese_font()
