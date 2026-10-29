@@ -1,73 +1,47 @@
-# python_data_processing
+# 城市电力负荷分析与预测
 
-课程项目（题目四）：**基于时间序列验证与特征消融的城市短期电力负荷预测研究**。
+《Python数据分析编程》课程项目（题目四）：**基于时间序列验证与特征消融的城市短期电力负荷预测研究**。
 
-- 数据：城市电力负荷 CSV（10 分钟采样，2017 年 364 天，含温度/湿度/风速/辐射及三个分区负荷，52,416 行）
 - 成员：郑宜桥（A，数据处理与 EDA）、况子昱（B，预测模型与时间序列验证）、徐启翔（C，消融、误差分析与报告整合）
-- 协议与文档：[docs/experiment_plan.md](docs/experiment_plan.md)（B1 实验协议）、[docs/model_delivery_report.md](docs/model_delivery_report.md)（B6 交付报告）、[docs/data_audit.md](docs/data_audit.md)、[docs/data_interface.md](docs/data_interface.md)、[docs/eda_findings.md](docs/eda_findings.md)（时序规律）、[docs/weather_findings.md](docs/weather_findings.md)（天气关系）、[docs/report_tables.md](docs/report_tables.md)（表 1/2）、[docs/handoff_report.md](docs/handoff_report.md)（数据模块交接）、[docs/report_plan.md](docs/report_plan.md)、[docs/error_analysis_findings.md](docs/error_analysis_findings.md)
+- 数据：某城市 2017 年电力负荷监测 CSV，10 分钟采样、364 天、52,416 行，含三个分区负荷与温度/湿度/风速/辐射
+- 任务：提前 1 小时（6 个采样步）预测三区负荷；按时间顺序 70%/15%/15% 切分并在子集边界剔除起点，比较历史同期基线、线性回归、梯度提升树，辅以特征消融与误差分析
+
+## 主要结果（测试集，三区合并）
+
+| 模型 | MAE | RMSE |
+|---|---|---|
+| 历史同期基线 ŷ(t+6)=y(t−1002) | 1050.68 | 1643.67 |
+| 线性回归（含周同期特征） | **514.09** | **767.16** |
+| 梯度提升树（含周同期特征） | 930.62 | 1258.73 |
+
+与预测目标时刻对齐的周同期负荷 y(t−1002) 是最关键的特征；线性回归较基线 MAE/RMSE 下降 51.1%/53.3%，三区全面最优。天气特征对梯度提升树有稳定增益，对线性回归接近中性；高峰时段误差明显更大且倾向低估，详见报告第 6 章。
 
 ## 目录结构
 
 ```
-data/raw/            原始 CSV（不入 git，需本地放置）
-data/processed/      清洗结果（不入 git，运行生成）
-src/                 数据审计与清洗（A1/A2）、时序规律与天气关系（A3/A4）、报告表格（A）、
-                     切分与特征（B2）、模型与评价（B3/B4）、统一比较（B5）、
-                     天气消融（C2）、误差分析（C3）
-tests/               切分/特征、模型、交付三套检查（共 19 项）
-outputs/predictions/ 三个模型的测试集预测（协议 8.1）
-outputs/metrics/     指标、GBT 调参明细与配置、模型对比表、消融与误差分析结果；
-                     另含数据与 EDA 的 eda_*.csv、weather_correlation.csv、temperature_bins.csv、
-                     report_table1/2.csv
-outputs/figures/     图 1–4（时序规律）、图 5–6（天气关系）、
-                     图 7（真实 vs 预测）、图 8（误差分析）、图 9（消融）、残差散点
-docs/                协议、报告计划、实验日志、交付报告、误差分析发现、EDA 结论与交接报告
+src/           清洗、EDA、切分与特征、模型评价、消融、误差分析
+tests/         28 项自动化检查
+data/          原始与清洗数据（不入 git）
+outputs/       预测、指标 CSV 与图表（运行生成）
+docs/          实验协议、各模块发现与交付文档
+deliverables/  项目报告（docx/pdf）、汇报 PPT 与视频
 ```
 
-## 复现成员 A 的数据与 EDA
+## 复现
 
 ```bash
-# 1. 将原始数据放入 data/raw/题4_城市电力负荷.csv（不入 git）
-# 2. 数据质量审计
-python src/data_audit.py --input data/raw/题4_城市电力负荷.csv --output docs/data_audit.md
-# 3. 清洗，生成 data/processed/power_load_clean.csv
-python src/data_cleaning.py
-# 4. 时序规律（图 1–4）与天气关系（图 5–6）
-python src/eda.py
-python src/weather_analysis.py
-# 5. 报告表 1、表 2
-python src/report_tables.py
+pip install -r requirements.txt
+# 原始数据放入 data/raw/题4_城市电力负荷.csv（不入 git）
+
+python src/data_cleaning.py       # 清洗
+python src/eda.py                 # 时序规律（图 1–4）
+python src/weather_analysis.py    # 天气关系（图 5–6）
+python src/compare.py             # 主实验：三模型训练、评价与图表
+python src/ablation.py            # 天气特征消融
+python src/probe_target_week.py   # 目标对齐周同期特征实验
+python src/error_analysis.py      # 误差分析（周同期实验加 --tag _tw）
+
+python -m pytest tests/ -q        # 28 项检查
 ```
 
-脚本全部以项目根目录为基准定位数据与输出，可从任意工作目录调用。图 1–4 为日/周/季节规律，图 5–6 为天气相关性与温度分箱，数字明细在 `outputs/metrics/eda_*.csv`、`weather_correlation.csv`、`temperature_bins.csv`。逐张图的核心观察与局限见 [docs/eda_checklist.md](docs/eda_checklist.md)，接口约定见 [docs/data_interface.md](docs/data_interface.md)。
-
-## 复现成员 B 的主实验
-
-```bash
-# 1. 将原始数据放入 data/raw/题4_城市电力负荷.csv（不入 git）
-# 2. 清洗
-python src/data_cleaning.py
-# 3. 完整主实验（重跑三模型 + 指标 + 图表）
-python src/compare.py
-# 4. 检查（19 项）
-python tests/test_splits_features.py
-python tests/test_models.py
-python tests/test_delivery_check.py
-```
-
-## 主实验结果（测试集，提前 1 小时预测，详见 model_delivery_report.md）
-
-| 模型 | 三区合并 MAE / RMSE |
-|---|---|
-| 历史同期基线 ŷ(t+6)=y(t-1002) | **1050.68 / 1643.67** |
-| 线性回归（14 特征） | 1493.37 / 1957.37 |
-| 梯度提升树（HistGradientBoosting） | 1554.91 / 2126.30 |
-
-测试期（11–12 月）三区域负荷水平相对训练期明显漂移，简单周同期基线总体占优；天气消融（C2）显示天气特征对 LR 有帮助、对 GBT 作用不稳定。细节与解释见实验日志和交付报告。
-
-## 依赖与安装注意
-
-- 依赖见 [requirements.txt](requirements.txt)；主实验环境 Python 3.9.6、numpy 1.26.4、pandas 2.3.3、scikit-learn 1.6.1、matplotlib 3.9.4。
-- 跨机器数值一致性建议锁定 `scikit-learn==1.6.1`（见交付报告第 6/7 节）。
-- 本机 pip 21.1.3 与系统代理存在已知 SSL 兼容问题，装包请用：
-  `NO_PROXY="*" python -m pip install <包名> -i https://mirrors.aliyun.com/pypi/simple/`
+实验协议见 [docs/experiment_plan.md](docs/experiment_plan.md)，模型交付细节见 [docs/model_delivery_report.md](docs/model_delivery_report.md)。跨机器复现建议锁定 scikit-learn 1.6.1。
